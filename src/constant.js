@@ -1,0 +1,1 @@
+export const DB_Name = 'salon_management_system';
