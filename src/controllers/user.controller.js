@@ -31,7 +31,7 @@ const createaccount = asynhandler(async (req, res) => {
     userName,
     email,
     password,
-    role: "user",
+    role: "customer",
     status: "active",
   });
 
@@ -138,4 +138,25 @@ const logout_user = asynhandler(async (req, res) => {
     .json(new apiResponse(200, "user logout successfully"));
 });
 
-export { createaccount, user_login, get_user, edit_user, logout_user };
+
+const get_current_user = asynhandler(async (req, res) => {
+  const userdata = await User.findById(req.user._id).select("-password");
+  res.status(200).json(new apiResponse(200, userdata, "Current user fetched successfully"));
+});
+
+
+const delete_user = asynhandler(async (req, res) => {
+  const { id } = req.params;
+  const deletedUser = await User.findByIdAndDelete(id);
+
+  if (!deletedUser) {
+    throw new apiError(404, "User not found");
+  }
+
+  res.status(200).json(new apiResponse(200, null, "User deleted successfully"));
+});
+
+
+
+
+export { createaccount, user_login, get_user, edit_user, logout_user, get_current_user, delete_user };
