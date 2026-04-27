@@ -15,7 +15,7 @@ const generateaccesstoken = async (userId) => {
 };
 
 const createaccount = asynhandler(async (req, res) => {
-  const { userName, email, password } = req.body;
+  const { userName, email, password, role, status } = req.body;
 
   if (!userName || !email || !password) {
     throw new apiError(400, "all field are required");
@@ -31,8 +31,9 @@ const createaccount = asynhandler(async (req, res) => {
     userName,
     email,
     password,
-    role: "customer",
-    status: "active",
+    role: role || "customer",
+
+    status: status || "active",
   });
 
   const userdata = await User.findById(user._id).select("-password");
@@ -138,12 +139,12 @@ const logout_user = asynhandler(async (req, res) => {
     .json(new apiResponse(200, "user logout successfully"));
 });
 
-
 const get_current_user = asynhandler(async (req, res) => {
   const userdata = await User.findById(req.user._id).select("-password");
-  res.status(200).json(new apiResponse(200, userdata, "Current user fetched successfully"));
+  res
+    .status(200)
+    .json(new apiResponse(200, userdata, "Current user fetched successfully"));
 });
-
 
 const delete_user = asynhandler(async (req, res) => {
   const { id } = req.params;
@@ -156,7 +157,25 @@ const delete_user = asynhandler(async (req, res) => {
   res.status(200).json(new apiResponse(200, null, "User deleted successfully"));
 });
 
+const get_singleuser = asynhandler(async (req, res) => {
+  const { id } = req.params;
+  const singleuser = await User.findById(id).select("-password");
 
+  if (!singleuser) {
+    throw new apiError(404, "user not found");
+  }
+  res
+    .status(200)
+    .json(new apiResponse(200, singleuser, "single user fetched successfully"));
+});
 
-
-export { createaccount, user_login, get_user, edit_user, logout_user, get_current_user, delete_user };
+export {
+  createaccount,
+  user_login,
+  get_user,
+  edit_user,
+  logout_user,
+  get_current_user,
+  delete_user,
+  get_singleuser,
+};

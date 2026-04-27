@@ -67,7 +67,7 @@ const create_service = asynhandler(async (req, res) => {
   }
   res
     .status(200)
-    .json(new apiResponse(200, "Service created successfully", service));
+    .json(new apiResponse(200, service,"Service created successfully"));
 });
 
 const update_service = asynhandler(async (req, res) => {
@@ -124,14 +124,45 @@ const update_service = asynhandler(async (req, res) => {
   // 6. Response
   res
     .status(200)
-    .json(new apiResponse(200, "Service updated successfully", service));
+    .json(new apiResponse(200, service,"Service updated successfully"));
 });
 
 const get_services = asynhandler(async (req, res) => {
   const services = await Service.find();
+  if (!services||services.length===0) {
+    throw new apiError(404, "No services found");
+  }
   res
     .status(200)
-    .json(new apiResponse(200, "Services retrieved successfully", services));
+    .json(new apiResponse(200, services,"Services retrieved successfully"));
 });
 
-export { create_service, update_service, get_services };
+
+
+
+ 
+const delete_service=asynhandler(async (req,res) => {
+  const {id}=req.params;
+ 
+  if (!id) {
+    throw new apiError(400,"user not fount")
+  }
+
+
+  const delete_data=await Service.findByIdAndDelete(
+    id
+  )
+
+  if (!delete_data) {
+    throw new apiError(404, "Service not found");
+  }
+
+  res
+    .status(200)
+    .json(new apiResponse(200, null, "Service deleted successfully"));
+
+})
+
+
+
+export { create_service, update_service, get_services, delete_service };

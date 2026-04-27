@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { create_service, get_services, update_service } from "../controllers/service.controller.js";
+import { create_service, delete_service, get_services, update_service } from "../controllers/service.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 const router = Router();
 
@@ -24,5 +24,6 @@ router.put(
   update_service,
 );
 router.get("/services", get_services);
+router.delete("/delete_service/:id", delete_service);
 
 export default router;
