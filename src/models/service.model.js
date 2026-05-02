@@ -31,7 +31,8 @@ const serviceSchema = new mongoose.Schema(
       required: true,
     },
     category: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ServiceCategory",
       required: true,
     },
   },
