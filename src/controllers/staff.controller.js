@@ -5,63 +5,109 @@ import { User } from "../models/user.model.js";
 import { Service } from "../models/service.model.js";
 import { Staff } from "../models/staff.model.js";
 
-const create_staf = asynhandler(async (req, res) => {
-  const { userName, phone_number, experience, address, Service_Name } =
-    req.body;
 
-  // ✅ validation
-  if (!userName || !phone_number || !experience || !address || !Service_Name) {
-    throw new apiError(400, "all fields are required");
+
+ const create_staf = asynhandler(async (req, res) => {
+  const {
+    userName,
+    phone_number,
+    experience,
+    address,
+    Service_Name,
+    description,
+  } = req.body;
+
+  // ✅ 1. Basic validation
+  if (
+    !userName ||
+    !phone_number ||
+    !experience ||
+    !address ||
+    !description
+  ) {
+    throw new apiError(400, "All fields are required");
   }
 
-  // ✅ check Service_Name array
-  if (!Array.isArray(Service_Name)) {
-    throw new apiError(400, "Service_Name must be an array");
+  // ✅ 2. Service validation (IMPORTANT FIX)
+  if (
+    !Service_Name ||
+    !Array.isArray(Service_Name) ||
+    Service_Name.length === 0
+  ) {
+    throw new apiError(
+      400,
+      "Service_Name is required and must be a non-empty array"
+    );
   }
 
-  // ✅ find user
+  // clean services (extra safety)
+  const cleanedServices = Service_Name.map((s) => s.trim()).filter(Boolean);
+
+  if (cleanedServices.length === 0) {
+    throw new apiError(400, "Service_Name cannot be empty");
+  }
+
+  // ✅ 3. Find user
   const finduser = await User.findOne({ userName: userName.trim() });
+
   if (!finduser) {
-    throw new apiError(404, `user with ${userName} not found`);
+    throw new apiError(404, `User with ${userName} not found`);
   }
+
+  // ❌ prevent admin conversion
+  if (finduser.role === "admin") {
+    throw new apiError(400, "Admin cannot be converted to staff");
+  }
+
+  // ✅ update role
   finduser.role = "staff";
   await finduser.save();
-  if (finduser.role === "admin") {
-    throw new apiError(400, "admin cannot be converted to staff");
-  }
 
-  // ✅ find services by names
+  // ✅ 4. Find services
   const services = await Service.find({
-    Service_Name: { $in: Service_Name },
+    Service_Name: { $in: cleanedServices },
   });
 
-  // ❌ agar koi service missing ho
-  if (services.length !== Service_Name.length) {
+  if (!services || services.length === 0) {
+    throw new apiError(404, "No services found");
+  }
+
+  if (services.length !== cleanedServices.length) {
     throw new apiError(400, "Some services not found");
   }
 
-  // ✅ extract IDs
+  // ✅ 5. Extract service IDs
   const serviceIds = services.map((s) => s._id);
 
-  // ✅ create staff
+  // ✅ 6. Create staff
   const staff = await Staff.create({
     user_id: finduser._id,
     phone_number,
     experience,
     address,
     service_id: serviceIds,
+    description,
   });
 
-  res.status(201).json(new apiResponse("staff created successfully", staff));
+  // ✅ 7. Return populated staff (FIXED)
+  const populatedStaff = await Staff.findById(staff._id)
+    .populate("user_id")
+    .populate("service_id");
+
+  return res
+    .status(201)
+    .json(
+      new apiResponse(201, populatedStaff, "Staff created successfully")
+    );
 });
 
 const update_staff = asynhandler(async (req, res) => {
   const { id } = req.params;
-  const { userName, phone_number, experience, address, Service_Name } =
+  const { userName, phone_number, experience, address, Service_Name, description } =
     req.body;
 
   // 1. validation
-  if (!userName || !phone_number || !experience || !address || !Service_Name) {
+  if (!userName || !phone_number || !experience || !address || !Service_Name || !description) {
     throw new apiError(400, "All fields are required");
   }
 
@@ -95,6 +141,7 @@ const update_staff = asynhandler(async (req, res) => {
       experience,
       address,
       service_id: serviceIds,
+      description,
     },
     { new: true },
   );

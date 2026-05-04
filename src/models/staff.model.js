@@ -20,11 +20,16 @@ const staffSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    description: {
+      type: String,
+      required: true,
+    },
 
     service_id: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Service",
+        required: true,
       },
     ],
   },

@@ -38,3 +38,5 @@ const create_apponitment = asynhandler(async (req, res) => {
     throw new apiError(404, `service with ${Service_Name} not found`);
   }
 });
+
+export { create_apponitment };
