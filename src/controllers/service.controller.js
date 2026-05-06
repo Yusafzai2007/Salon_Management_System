@@ -6,7 +6,7 @@ import { Service } from "../models/service.model.js";
 import { ServiceCategory } from "../models/service.category.model.js";
 
 const create_service = asynhandler(async (req, res) => {
-  const {
+  let {
     service_category_name,
     price,
     Service_Name,
@@ -17,6 +17,12 @@ const create_service = asynhandler(async (req, res) => {
     discount,
   } = req.body;
 
+  // ✅ Trim all string fields
+  service_category_name = service_category_name?.trim();
+  Service_Name = Service_Name?.trim();
+  description = description?.trim();
+
+  // ✅ Validation
   if (
     !Service_Name ||
     !service_category_name ||
@@ -28,15 +34,18 @@ const create_service = asynhandler(async (req, res) => {
     throw new apiError(400, "All fields are required");
   }
 
+  // ✅ Number validation
   if (isNaN(price) || isNaN(final_price)) {
     throw new apiError(400, "Price and final price must be numbers");
   }
 
+  // ✅ Check duplicate (after trim)
   const check_service = await Service.findOne({ Service_Name });
   if (check_service) {
     throw new apiError(400, "Service already exists");
   }
 
+  // ✅ Category find (trimmed)
   const service_catrgory = await ServiceCategory.findOne({
     service_category_name,
   });
@@ -45,10 +54,11 @@ const create_service = asynhandler(async (req, res) => {
     throw new apiError(404, "Service category not found");
   }
 
-  const localImg = req.files?.service_Image.map((file) => file.path);
+  // ✅ Images
+  const localImg = req.files?.service_Image?.map((file) => file.path);
 
-  if (!localImg) {
-    throw new apiError(400, "Imgages are required");
+  if (!localImg || localImg.length === 0) {
+    throw new apiError(400, "Images are required");
   }
 
   const uploadedImg = [];
@@ -56,15 +66,16 @@ const create_service = asynhandler(async (req, res) => {
   for (const img of localImg) {
     const uploadImg = await cloudinaryimg(img);
     if (!uploadImg) {
-      throw new apiError(400, "product img is not uploaded");
+      throw new apiError(400, "Product image not uploaded");
     }
     uploadedImg.push(uploadImg.url);
   }
 
+  // ✅ Create service
   const service = await Service.create({
     Service_Name,
     price,
-    discount: 0,
+    discount: discount || 0,
     final_price,
     duration,
     description,
@@ -75,6 +86,7 @@ const create_service = asynhandler(async (req, res) => {
   if (!service) {
     throw new apiError(400, "Service not created");
   }
+
   res
     .status(200)
     .json(new apiResponse(200, service, "Service created successfully"));
@@ -184,4 +196,24 @@ const delete_service = asynhandler(async (req, res) => {
     .json(new apiResponse(200, null, "Service deleted successfully"));
 });
 
-export { create_service, update_service, get_services, delete_service };
+const single_service = asynhandler(async (req, res) => {
+  const { id } = req.params;
+  const service = await Service.findById(id).populate(
+    "category",
+    "service_category_name description",
+  );
+  if (!service) {
+    throw new apiError(404, "Service not found");
+  }
+  res
+    .status(200)
+    .json(new apiResponse(200, service, "Service retrieved successfully"));
+});
+
+export {
+  create_service,
+  update_service,
+  get_services,
+  delete_service,
+  single_service,
+};

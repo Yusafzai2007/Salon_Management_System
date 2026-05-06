@@ -5,9 +5,7 @@ import { User } from "../models/user.model.js";
 import { Service } from "../models/service.model.js";
 import { Staff } from "../models/staff.model.js";
 
-
-
- const create_staf = asynhandler(async (req, res) => {
+const create_staf = asynhandler(async (req, res) => {
   const {
     userName,
     phone_number,
@@ -18,13 +16,7 @@ import { Staff } from "../models/staff.model.js";
   } = req.body;
 
   // ✅ 1. Basic validation
-  if (
-    !userName ||
-    !phone_number ||
-    !experience ||
-    !address ||
-    !description
-  ) {
+  if (!userName || !phone_number || !experience || !address || !description) {
     throw new apiError(400, "All fields are required");
   }
 
@@ -36,7 +28,7 @@ import { Staff } from "../models/staff.model.js";
   ) {
     throw new apiError(
       400,
-      "Service_Name is required and must be a non-empty array"
+      "Service_Name is required and must be a non-empty array",
     );
   }
 
@@ -96,18 +88,29 @@ import { Staff } from "../models/staff.model.js";
 
   return res
     .status(201)
-    .json(
-      new apiResponse(201, populatedStaff, "Staff created successfully")
-    );
+    .json(new apiResponse(201, populatedStaff, "Staff created successfully"));
 });
 
 const update_staff = asynhandler(async (req, res) => {
   const { id } = req.params;
-  const { userName, phone_number, experience, address, Service_Name, description } =
-    req.body;
+  const {
+    userName,
+    phone_number,
+    experience,
+    address,
+    Service_Name,
+    description,
+  } = req.body;
 
   // 1. validation
-  if (!userName || !phone_number || !experience || !address || !Service_Name || !description) {
+  if (
+    !userName ||
+    !phone_number ||
+    !experience ||
+    !address ||
+    !Service_Name ||
+    !description
+  ) {
     throw new apiError(400, "All fields are required");
   }
 
@@ -175,4 +178,19 @@ const delete_staff = asynhandler(async (req, res) => {
   res.status(200).json(new apiResponse(200, "Staff deleted successfully"));
 });
 
-export { create_staf, update_staff, get_staff, delete_staff };
+const single_staff = asynhandler(async (req, res) => {
+  const { id } = req.params;
+  const staff = await Staff.findById(id)
+    .populate("user_id")
+    .select("-password")
+    .populate("service_id");
+  if (!staff) {
+    throw new apiError(404, "Staff not found");
+  }
+
+  res
+    .status(200)
+    .json(new apiResponse(200, "Staff retrieved successfully", staff));
+});
+
+export { create_staf, update_staff, get_staff, delete_staff, single_staff };
