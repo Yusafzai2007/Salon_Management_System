@@ -7,7 +7,7 @@ app.use(
   cors({
     origin: "http://localhost:4200",
     credentials: true,
-  })
+  }),
 );
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
@@ -18,17 +18,14 @@ import user_route from "./routes/user.route.js";
 import service_route from "./routes/service.route.js";
 import service_category_route from "./routes/service_category.route.js";
 import staff_route from "./routes/staff.route.js";
+import appointment_route from "./routes/appointment_route.js";
 import { apiError } from "./utils/apiError.js";
 
 app.use("/api/v1/salon", user_route);
 app.use("/api/v1/salon", service_route);
 app.use("/api/v1/salon", service_category_route);
+app.use("/api/v1/salon", appointment_route);
 app.use("/api/v1/salon", staff_route);
-
-
-
-
-
 
 // ================= Error Handling =================
 app.use((err, req, res, next) => {
@@ -44,7 +41,5 @@ app.use((err, req, res, next) => {
     message: err.message || "Internal Server Error",
   });
 });
-
-
 
 export default app;
